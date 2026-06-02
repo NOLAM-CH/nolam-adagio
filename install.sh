@@ -68,14 +68,21 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" != *Cinnamon* ]]; then
   warn "On continue, mais certains réglages peuvent ne rien faire."
 fi
 
-# ── Sauvegarde complète de l'état dconf (la garantie de retour) ──
+# ── Sauvegarde de l'état d'origine (UNE SEULE FOIS, jamais écrasée) ──
+# Capture l'état AVANT toute modification Adagio. Réappliquer un profil
+# (ou en appliquer un autre) ne doit JAMAIS remplacer ce point de retour,
+# sinon restore.sh ramènerait vers un état déjà modifié.
 mkdir -p "$BACKUP_DIR"
-BACKUP_FILE="$BACKUP_DIR/before-$PROFILE_NAME.dconf"
+PRISTINE="$BACKUP_DIR/original-state.dconf"
 LAST_LINK="$BACKUP_DIR/last-backup"
-if dconf dump / > "$BACKUP_FILE" 2>/dev/null; then
-  ln -sf "$BACKUP_FILE" "$LAST_LINK"
-  ok "État actuel sauvegardé → $BACKUP_FILE"
-  say "${C_DIM}  (./restore.sh remettra tout exactement comme avant)${C_OFF}"
+if [[ -f "$PRISTINE" ]]; then
+  ln -sf "$PRISTINE" "$LAST_LINK"
+  ok "État d'origine déjà sauvegardé (préservé, jamais écrasé)"
+  say "${C_DIM}  → $PRISTINE${C_OFF}"
+elif dconf dump / > "$PRISTINE" 2>/dev/null; then
+  ln -sf "$PRISTINE" "$LAST_LINK"
+  ok "État d'origine sauvegardé (une seule fois) → $PRISTINE"
+  say "${C_DIM}  (./restore.sh remettra le bureau dans son état d'avant Adagio)${C_OFF}"
 else
   warn "Sauvegarde dconf impossible — on continue sans filet de retour automatique."
 fi

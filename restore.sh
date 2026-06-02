@@ -8,6 +8,7 @@
 set -uo pipefail
 
 BACKUP_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/nolam-adagio"
+PRISTINE="$BACKUP_DIR/original-state.dconf"
 LAST_LINK="$BACKUP_DIR/last-backup"
 
 if [[ -t 1 ]]; then
@@ -20,8 +21,9 @@ die()  { printf '%s✗%s %s\n' "$C_ERR" "$C_OFF" "$*" >&2; exit 1; }
 
 command -v dconf >/dev/null 2>&1 || die "dconf introuvable."
 
-# Permet de choisir une sauvegarde précise, sinon la dernière
-TARGET="${1:-$LAST_LINK}"
+# Cible : l'état d'origine d'avant Adagio (sinon une sauvegarde précise passée en argument)
+TARGET="${1:-$PRISTINE}"
+[[ -e "$TARGET" ]] || TARGET="$LAST_LINK"
 if [[ "${1:-}" == "--list" ]]; then
   printf 'Sauvegardes disponibles dans %s :\n' "$BACKUP_DIR"
   ls -1t "$BACKUP_DIR"/*.dconf 2>/dev/null || echo "  (aucune)"
@@ -32,7 +34,7 @@ fi
 
 printf 'Restauration de l’état depuis : %s\n' "$(readlink -f "$TARGET")"
 if dconf load / < "$TARGET"; then
-  ok "Bureau restauré tel qu'avant l'application du profil."
+  ok "Bureau restauré dans son état d'origine (d'avant Adagio)."
   printf '%s  Une déconnexion/reconnexion peut être nécessaire pour tout réafficher.%s\n' "$C_DIM" "$C_OFF"
 else
   die "Échec de la restauration."
