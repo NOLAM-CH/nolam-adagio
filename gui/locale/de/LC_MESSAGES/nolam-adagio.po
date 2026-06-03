@@ -1,0 +1,100 @@
+# NOLAM Adagio — Deutsche Übersetzung (Schweizer Konventionen: "ss" statt "ß")
+# Copyright (C) 2026 dpan-Bug / NOLAM
+# SPDX-License-Identifier: GPL-3.0-or-later
+msgid ""
+msgstr ""
+"Project-Id-Version: nolam-adagio 0.1\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "NOLAM Adagio — Adapter mon écran"
+msgstr "NOLAM Adagio — Meinen Bildschirm anpassen"
+
+msgid "Continuer  ▶"
+msgstr "Weiter  ▶"
+
+msgid "◀  Retour"
+msgstr "◀  Zurück"
+
+msgid "Bienvenue 👋"
+msgstr "Willkommen 👋"
+
+msgid "« C'est à la machine de s'adapter à vous,\npas à vous de vous adapter à la machine. »"
+msgstr "« Die Maschine passt sich Ihnen an,\nnicht Sie sich der Maschine. »"
+
+msgid "Nous allons régler votre écran ensemble,\nà votre confort. À chaque étape, vous voyez le résultat tout de suite."
+msgstr "Wir richten Ihren Bildschirm gemeinsam ein,\nganz nach Ihrem Komfort. Bei jedem Schritt sehen Sie das Ergebnis sofort."
+
+msgid "Commencer  ▶"
+msgstr "Starten  ▶"
+
+msgid "Qu'est-ce qui vous ressemble le plus ?"
+msgstr "Was trifft am ehesten auf Sie zu?"
+
+msgid "(on pourra tout ajuster ensuite)"
+msgstr "(alles lässt sich danach anpassen)"
+
+msgid "👁  Je vois mal"
+msgstr "👁  Ich sehe schlecht"
+
+msgid "Texte très grand, fort contraste, gros curseur"
+msgstr "Sehr grosse Schrift, starker Kontrast, grosser Mauszeiger"
+
+msgid "✋  Mes gestes sont difficiles"
+msgstr "✋  Bewegungen fallen mir schwer"
+
+msgid "Un seul clic, grand curseur, grandes cibles"
+msgstr "Einfacher Klick, grosser Mauszeiger, grosse Schaltflächen"
+
+msgid "🌱  Je débute / je veux simple"
+msgstr "🌱  Ich fange an / ich möchte es einfach"
+
+msgid "Plus grand, plus clair, plus calme"
+msgstr "Grösser, heller, ruhiger"
+
+msgid "À votre main"
+msgstr "Nach Ihrem Wunsch"
+
+msgid "Voici un exemple de texte. Est-il agréable à lire ?"
+msgstr "Hier ein Beispieltext. Ist er angenehm zu lesen?"
+
+msgid "Taille du texte"
+msgstr "Schriftgrösse"
+
+msgid "Taille du curseur"
+msgstr "Mauszeiger-Grösse"
+
+msgid "Ambiance :"
+msgstr "Darstellung:"
+
+msgid "☀ Clair"
+msgstr "☀ Hell"
+
+msgid "🌙 Sombre"
+msgstr "🌙 Dunkel"
+
+msgid "◐ Contraste"
+msgstr "◐ Kontrast"
+
+msgid "Pour ouvrir :"
+msgstr "Zum Öffnen:"
+
+msgid "Un seul clic"
+msgstr "Einfacher Klick"
+
+msgid "Double clic"
+msgstr "Doppelklick"
+
+msgid "C'est parfait  ▶"
+msgstr "Perfekt  ▶"
+
+msgid "Voilà, c'est à vous ✨"
+msgstr "Fertig, ganz nach Ihnen ✨"
+
+msgid "Votre réglage est enregistré.\nVous pourrez le retrouver à tout moment :\n« Adapter mon écran »."
+msgstr "Ihre Einstellung ist gespeichert.\nSie finden sie jederzeit wieder:\n« Meinen Bildschirm anpassen »."
+
+msgid "Terminer"
+msgstr "Beenden"

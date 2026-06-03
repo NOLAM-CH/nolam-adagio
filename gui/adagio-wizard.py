@@ -6,14 +6,29 @@
 #
 #  Adapte le bureau Cinnamon à l'utilisateur, avec APERÇU EN DIRECT.
 #  Mode rapide (3 portes) + réglage fin. Écrit un profil réutilisable.
+#  Multilingue (gettext) : FR (base) + DE ; suit la langue du système.
 #
 #  Copyright (C) 2026 dpan-Bug / NOLAM
 #  SPDX-License-Identifier: GPL-3.0-or-later
 # ─────────────────────────────────────────────────────────────
 import os
+import gettext
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gio, Gdk, GLib
+from gi.repository import Gtk, Gio, Gdk
+
+# ── i18n (gettext) ───────────────────────────────────────────
+# Les chaînes du code sont en français (langue de base = msgid).
+# Une langue = un fichier locale/<lg>/LC_MESSAGES/nolam-adagio.mo
+# Le wizard suit la langue du système (LANG/LANGUAGE), override possible.
+APP = "nolam-adagio"
+LOCALE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locale")
+try:
+    gettext.bindtextdomain(APP, LOCALE_DIR)
+    gettext.textdomain(APP)
+except Exception:
+    pass
+_ = gettext.gettext
 
 # ── Moteur de réglages (live via Gio.Settings) ───────────────
 def _settings(schema):
@@ -65,12 +80,10 @@ def set_no_lock():
         SCR.set_boolean("idle-activation-enabled", False)
     if SESS: SESS.set_uint("idle-delay", 0)
 
-# Thèmes : on reste sur la famille Mint-Y (présente d'office sur Mint)
 THEME_CLAIR    = "Mint-Y"
 THEME_SOMBRE   = "Mint-Y-Dark"
-THEME_CONTRAST = "Mint-Y-Dark"   # + texte agrandi (cf. porte contraste)
+THEME_CONTRAST = "Mint-Y-Dark"
 
-# Profils de base appliqués par les "portes"
 def profil_vois_mal():
     set_text_scale(1.7); set_cursor(48); set_theme(THEME_CONTRAST)
     set_click("single"); set_no_lock()
@@ -89,7 +102,7 @@ def ecrire_profil():
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, "mon-profil.conf")
     lignes = [
-        "# Profil généré par l'assistant NOLAM Adagio",
+        "# Profil genere par l'assistant NOLAM Adagio",
         "[org.cinnamon.desktop.interface]",
         f"text-scaling-factor = {get_text_scale():.2f}",
         f"cursor-size = {get_cursor()}",
@@ -123,7 +136,7 @@ button   { padding: 12px 20px; }
 
 class Wizard(Gtk.Window):
     def __init__(self):
-        super().__init__(title="NOLAM Adagio — Adapter mon écran")
+        super().__init__(title=_("NOLAM Adagio — Adapter mon écran"))
         self.set_default_size(820, 600)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(24)
@@ -143,26 +156,27 @@ class Wizard(Gtk.Window):
         self.stack.add_named(self._fini(), "fini")
         self.stack.set_visible_child_name("accueil")
 
-    def _nav(self, retour=None, suite=None, suite_label="Continuer  ▶"):
+    def _nav(self, retour=None, suite=None, suite_label=None):
+        if suite_label is None:
+            suite_label = _("Continuer  ▶")
         box = Gtk.Box(spacing=12)
         if retour:
-            b = Gtk.Button(label="◀  Retour")
-            b.connect("clicked", lambda *_: self.stack.set_visible_child_name(retour))
+            b = Gtk.Button(label=_("◀  Retour"))
+            b.connect("clicked", lambda *_a: self.stack.set_visible_child_name(retour))
             box.pack_start(b, False, False, 0)
-        box.pack_start(Gtk.Box(), True, True, 0)  # spacer
+        box.pack_start(Gtk.Box(), True, True, 0)
         if suite:
             b = Gtk.Button(label=suite_label); b.get_style_context().add_class("gros")
-            b.connect("clicked", lambda *_: suite())
+            b.connect("clicked", lambda *_a: suite())
             box.pack_end(b, False, False, 0)
         return box
 
-    # Écran 1 — Accueil + manifeste
     def _accueil(self):
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=22)
-        t = Gtk.Label(label="Bienvenue 👋"); t.get_style_context().add_class("titre")
-        m = Gtk.Label(label="« C'est à la machine de s'adapter à vous,\npas à vous de vous adapter à la machine. »")
+        t = Gtk.Label(label=_("Bienvenue 👋")); t.get_style_context().add_class("titre")
+        m = Gtk.Label(label=_("« C'est à la machine de s'adapter à vous,\npas à vous de vous adapter à la machine. »"))
         m.get_style_context().add_class("manifeste"); m.set_justify(Gtk.Justification.CENTER)
-        d = Gtk.Label(label="Nous allons régler votre écran ensemble,\nà votre confort. À chaque étape, vous voyez le résultat tout de suite.")
+        d = Gtk.Label(label=_("Nous allons régler votre écran ensemble,\nà votre confort. À chaque étape, vous voyez le résultat tout de suite."))
         d.set_justify(Gtk.Justification.CENTER)
         v.pack_start(Gtk.Box(), True, True, 0)
         v.pack_start(t, False, False, 0)
@@ -170,16 +184,15 @@ class Wizard(Gtk.Window):
         v.pack_start(d, False, False, 0)
         v.pack_start(Gtk.Box(), True, True, 0)
         v.pack_end(self._nav(suite=lambda: self.stack.set_visible_child_name("portes"),
-                             suite_label="Commencer  ▶"), False, False, 0)
+                             suite_label=_("Commencer  ▶")), False, False, 0)
         return v
 
-    # Écran 2 — Les 3 portes
     def _portes(self):
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        t = Gtk.Label(label="Qu'est-ce qui vous ressemble le plus ?")
+        t = Gtk.Label(label=_("Qu'est-ce qui vous ressemble le plus ?"))
         t.get_style_context().add_class("titre")
         v.pack_start(t, False, False, 0)
-        v.pack_start(Gtk.Label(label="(on pourra tout ajuster ensuite)"), False, False, 0)
+        v.pack_start(Gtk.Label(label=_("(on pourra tout ajuster ensuite)")), False, False, 0)
 
         def porte(txt, sous, fn):
             b = Gtk.Button()
@@ -188,57 +201,52 @@ class Wizard(Gtk.Window):
             l2 = Gtk.Label(label=sous)
             inner.pack_start(l1, False, False, 0); inner.pack_start(l2, False, False, 0)
             b.add(inner)
-            def go(*_):
-                fn(); self._sync_controls(); self.stack.set_visible_child_name("fin")
+            def go(*_a):
+                fn(); self.stack.set_visible_child_name("fin")
             b.connect("clicked", go)
             return b
 
-        v.pack_start(porte("👁  Je vois mal", "Texte très grand, fort contraste, gros curseur", profil_vois_mal), False, False, 0)
-        v.pack_start(porte("✋  Mes gestes sont difficiles", "Un seul clic, grand curseur, grandes cibles", profil_gestes), False, False, 0)
-        v.pack_start(porte("🌱  Je débute / je veux simple", "Plus grand, plus clair, plus calme", profil_debute), False, False, 0)
+        v.pack_start(porte(_("👁  Je vois mal"), _("Texte très grand, fort contraste, gros curseur"), profil_vois_mal), False, False, 0)
+        v.pack_start(porte(_("✋  Mes gestes sont difficiles"), _("Un seul clic, grand curseur, grandes cibles"), profil_gestes), False, False, 0)
+        v.pack_start(porte(_("🌱  Je débute / je veux simple"), _("Plus grand, plus clair, plus calme"), profil_debute), False, False, 0)
         v.pack_end(self._nav(retour="accueil"), False, False, 0)
         return v
 
-    # Écran 3 — Réglage fin avec aperçu live
     def _reglage_fin(self):
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
-        t = Gtk.Label(label="À votre main"); t.get_style_context().add_class("titre")
+        t = Gtk.Label(label=_("À votre main")); t.get_style_context().add_class("titre")
         v.pack_start(t, False, False, 0)
 
-        self.echantillon = Gtk.Label(label="Voici un exemple de texte. Est-il agréable à lire ?")
+        self.echantillon = Gtk.Label(label=_("Voici un exemple de texte. Est-il agréable à lire ?"))
         self.echantillon.get_style_context().add_class("echantillon")
         self.echantillon.set_line_wrap(True)
         v.pack_start(self.echantillon, False, False, 0)
 
-        # Taille du texte
-        v.pack_start(self._ligne_pm("Taille du texte",
+        v.pack_start(self._ligne_pm(_("Taille du texte"),
             lambda: set_text_scale(min(2.5, get_text_scale()+0.1)),
             lambda: set_text_scale(max(1.0, get_text_scale()-0.1))), False, False, 0)
-        # Taille du curseur
-        v.pack_start(self._ligne_pm("Taille du curseur",
+        v.pack_start(self._ligne_pm(_("Taille du curseur"),
             lambda: set_cursor(min(96, get_cursor()+8)),
             lambda: set_cursor(max(16, get_cursor()-8))), False, False, 0)
 
-        # Ambiance (thème)
         amb = Gtk.Box(spacing=10)
-        amb.pack_start(Gtk.Label(label="Ambiance :"), False, False, 0)
-        for lbl, name in (("☀ Clair", THEME_CLAIR), ("🌙 Sombre", THEME_SOMBRE), ("◐ Contraste", THEME_CONTRAST)):
+        amb.pack_start(Gtk.Label(label=_("Ambiance :")), False, False, 0)
+        for lbl, name in ((_("☀ Clair"), THEME_CLAIR), (_("🌙 Sombre"), THEME_SOMBRE), (_("◐ Contraste"), THEME_CONTRAST)):
             b = Gtk.Button(label=lbl)
             b.connect("clicked", lambda _w, n=name: set_theme(n))
             amb.pack_start(b, True, True, 0)
         v.pack_start(amb, False, False, 0)
 
-        # Clic
         clic = Gtk.Box(spacing=10)
-        clic.pack_start(Gtk.Label(label="Pour ouvrir :"), False, False, 0)
-        b1 = Gtk.Button(label="Un seul clic"); b1.connect("clicked", lambda *_: set_click("single"))
-        b2 = Gtk.Button(label="Double clic"); b2.connect("clicked", lambda *_: set_click("double"))
+        clic.pack_start(Gtk.Label(label=_("Pour ouvrir :")), False, False, 0)
+        b1 = Gtk.Button(label=_("Un seul clic")); b1.connect("clicked", lambda *_a: set_click("single"))
+        b2 = Gtk.Button(label=_("Double clic")); b2.connect("clicked", lambda *_a: set_click("double"))
         clic.pack_start(b1, True, True, 0); clic.pack_start(b2, True, True, 0)
         v.pack_start(clic, False, False, 0)
 
         v.pack_end(self._nav(retour="portes",
             suite=lambda: (ecrire_profil(), self.stack.set_visible_child_name("fini")),
-            suite_label="C'est parfait  ▶"), False, False, 0)
+            suite_label=_("C'est parfait  ▶")), False, False, 0)
         return v
 
     def _ligne_pm(self, titre, plus, moins):
@@ -247,25 +255,21 @@ class Wizard(Gtk.Window):
         h.pack_start(Gtk.Box(), True, True, 0)
         bm = Gtk.Button(label="A −"); bm.get_style_context().add_class("gros")
         bp = Gtk.Button(label="A +"); bp.get_style_context().add_class("gros")
-        bm.connect("clicked", lambda *_: moins())
-        bp.connect("clicked", lambda *_: plus())
+        bm.connect("clicked", lambda *_a: moins())
+        bp.connect("clicked", lambda *_a: plus())
         h.pack_start(bm, False, False, 0); h.pack_start(bp, False, False, 0)
         return h
 
-    def _sync_controls(self):
-        pass  # (les contrôles agissent en direct ; rien à pré-remplir pour ce prototype)
-
-    # Écran 4 — Terminé
     def _fini(self):
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=22)
         v.pack_start(Gtk.Box(), True, True, 0)
-        t = Gtk.Label(label="Voilà, c'est à vous ✨"); t.get_style_context().add_class("titre")
-        d = Gtk.Label(label="Votre réglage est enregistré.\nVous pourrez le retrouver à tout moment :\n« Adapter mon écran ».")
+        t = Gtk.Label(label=_("Voilà, c'est à vous ✨")); t.get_style_context().add_class("titre")
+        d = Gtk.Label(label=_("Votre réglage est enregistré.\nVous pourrez le retrouver à tout moment :\n« Adapter mon écran »."))
         d.set_justify(Gtk.Justification.CENTER)
         v.pack_start(t, False, False, 0); v.pack_start(d, False, False, 0)
         v.pack_start(Gtk.Box(), True, True, 0)
-        b = Gtk.Button(label="Terminer"); b.get_style_context().add_class("gros")
-        b.connect("clicked", lambda *_: Gtk.main_quit())
+        b = Gtk.Button(label=_("Terminer")); b.get_style_context().add_class("gros")
+        b.connect("clicked", lambda *_a: Gtk.main_quit())
         box = Gtk.Box(); box.pack_start(Gtk.Box(), True, True, 0); box.pack_end(b, False, False, 0)
         v.pack_end(box, False, False, 0)
         return v
