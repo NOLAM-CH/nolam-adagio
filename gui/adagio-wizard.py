@@ -62,14 +62,9 @@ def set_cursor(v):
     v = int(v)
     for s in (IFACE, GIFACE):
         if s: s.set_int("cursor-size", v)
-    # Sous X11/Cinnamon, changer cursor-size ne rafraîchit pas le pointeur
-    # déjà affiché. On force le rechargement en ré-appliquant le thème de
-    # curseur (un set de même valeur n'émet pas de signal → bascule brève).
-    if IFACE:
-        theme = IFACE.get_string("cursor-theme") or "Adwaita"
-        alt = "Adwaita" if theme != "Adwaita" else "Bibata-Modern-Classic"
-        IFACE.set_string("cursor-theme", alt)
-        IFACE.set_string("cursor-theme", theme)
+    # Le rafraîchissement live du pointeur est assuré par le démon de réglages
+    # (csd-xsettings) sur une session saine. La valeur est toujours appliquée
+    # correctement et prise en compte au plus tard à la prochaine connexion.
 
 def get_cursor():
     return IFACE.get_int("cursor-size") if IFACE else 24
