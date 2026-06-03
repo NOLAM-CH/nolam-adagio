@@ -139,17 +139,25 @@ def ecrire_profil():
 
 # ── Interface ────────────────────────────────────────────────
 CSS = b"""
-* { font-size: 15pt; }
-.titre   { font-size: 28pt; font-weight: bold; color: #1b4d3a; }
-.manifeste { font-size: 17pt; font-style: italic; }
-.porte   { font-size: 19pt; padding: 24px; }
+/* Le wizard impose SON apparence (fond blanc, texte foncé) quel que soit
+   le theme de la session : un outil d'accessibilite doit rester lisible. */
+window { background-color: #ffffff; }
+* { font-size: 15pt; color: #1b1b1b; }
+.titre     { font-size: 28pt; font-weight: bold; color: #1b4d3a; }
+.manifeste { font-size: 17pt; font-style: italic; color: #2f5e7d; }
+.porte     { font-size: 19pt; padding: 24px; }
 .porte-sous { font-size: 13pt; opacity: 0.7; }
-.gros    { font-size: 20pt; font-weight: bold; padding: 10px 26px; }
-.echantillon { font-size: 16pt; padding: 16px; border: 2px solid #b8c4bd; border-radius: 10px; background: #f4f7f5; }
+.gros      { font-size: 20pt; font-weight: bold; padding: 10px 26px; }
+.echantillon { font-size: 16pt; padding: 16px; border: 2px solid #b8c4bd; border-radius: 10px; background: #f4f7f5; color: #1b1b1b; }
 .reglage-titre { font-weight: bold; }
-button   { padding: 12px 20px; }
-button.porte:hover { background: #e8f0ec; }
-radiobutton:checked, button:checked { background: #1b4d3a; color: #ffffff; font-weight: bold; }
+button, radiobutton {
+  background-image: none; background-color: #eef2ef; color: #1b1b1b;
+  border: 1px solid #c4d0c8; border-radius: 8px; padding: 12px 20px;
+}
+button:hover, radiobutton:hover { background-color: #dfeae3; }
+radiobutton:checked, button:checked {
+  background-image: none; background-color: #1b4d3a; color: #ffffff; font-weight: bold;
+}
 """
 
 class Wizard(Gtk.Window):
