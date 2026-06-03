@@ -98,3 +98,27 @@ msgstr "Ihre Einstellung ist gespeichert.\nSie finden sie jederzeit wieder:\n« 
 
 msgid "Terminer"
 msgstr "Beenden"
+
+msgid "Que voulez-vous gérer vous-même ?"
+msgstr "Was möchten Sie selbst verwalten?"
+
+msgid "(modifiable à tout moment)"
+msgstr "(jederzeit änderbar)"
+
+msgid "🛡️  Tranquille"
+msgstr "🛡️  Entspannt"
+
+msgid "L'essentiel, rien d'autre. On s'occupe du reste."
+msgstr "Nur das Wesentliche. Um den Rest kümmern wir uns."
+
+msgid "🧭  Curieux"
+msgstr "🧭  Neugierig"
+
+msgid "L'essentiel + la logithèque pour installer vos applications."
+msgstr "Das Wesentliche + die Software-Verwaltung zum Installieren von Apps."
+
+msgid "🔧  Aux commandes"
+msgstr "🔧  Selbst am Steuer"
+
+msgid "Tout est accessible, vous gérez votre ordinateur librement."
+msgstr "Alles ist zugänglich, Sie verwalten Ihren Computer frei."

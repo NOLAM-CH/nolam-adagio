@@ -110,6 +110,49 @@ def profil_debute():
     set_text_scale(1.4); set_cursor(36); set_theme(THEME_CLAIR)
     set_click("single"); set_no_lock()
 
+# ── 2e axe : niveau d'autonomie (masque des applis du menu) ──
+# Agit dans ~/.local/share/applications (config de l'utilisateur lui-même,
+# donc PAS besoin de sudo). Un override NoDisplay=true cache l'appli du menu ;
+# retirer l'override la fait réapparaître. Réversible à tout moment.
+APPS_TECHNIQUES = [
+    "org.gnome.Terminal.desktop", "ca.desrt.dconf-editor.desktop",
+    "gnome-disks.desktop", "org.gnome.DiskUtility.desktop",
+    "gnome-system-monitor.desktop", "mate-system-monitor.desktop",
+    "gparted.desktop", "timeshift-gtk.desktop",
+    "mintdrivers.desktop", "mintsources.desktop",
+    "software-properties-gtk.desktop", "nm-connection-editor.desktop",
+    "org.gnome.Tweaks.desktop", "byobu.desktop", "yelp.desktop",
+]
+APPS_LOGITHEQUE = ["mintinstall.desktop"]   # le « Store » / Gestionnaire de logiciels
+
+def _user_apps_dir():
+    d = os.path.expanduser("~/.local/share/applications")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+def _cacher(app_id, cacher):
+    """Crée (cacher=True) ou retire (False) un override NoDisplay pour app_id."""
+    path = os.path.join(_user_apps_dir(), app_id)
+    if cacher:
+        with open(path, "w") as f:
+            f.write("[Desktop Entry]\nType=Application\nName=hidden\n"
+                    "NoDisplay=true\nX-NOLAM-Adagio=managed\n")
+    else:
+        # ne retire que NOS overrides (marqueur), pour ne rien casser
+        try:
+            if os.path.exists(path) and "X-NOLAM-Adagio=managed" in open(path).read():
+                os.remove(path)
+        except Exception:
+            pass
+
+def appliquer_autonomie(niveau):
+    """1=Tranquille (cache technique+logithèque), 2=Curieux (cache technique,
+       garde logithèque), 3=Aux commandes (tout visible)."""
+    for app in APPS_TECHNIQUES:
+        _cacher(app, niveau in (1, 2))
+    for app in APPS_LOGITHEQUE:
+        _cacher(app, niveau == 1)
+
 # ── Écriture du profil (.conf réutilisable) ──────────────────
 def ecrire_profil():
     d = os.path.expanduser("~/.config/nolam-adagio")
@@ -179,6 +222,7 @@ class Wizard(Gtk.Window):
         self.stack.add_named(self._accueil(), "accueil")
         self.stack.add_named(self._portes(), "portes")
         self.stack.add_named(self._reglage_fin(), "fin")
+        self.stack.add_named(self._autonomie(), "autonomie")
         self.stack.add_named(self._fini(), "fini")
         self.stack.set_visible_child_name("accueil")
 
@@ -297,8 +341,38 @@ class Wizard(Gtk.Window):
         v.pack_start(clic, False, False, 0)
 
         v.pack_end(self._nav(retour="portes",
-            suite=lambda: (ecrire_profil(), self.stack.set_visible_child_name("fini")),
-            suite_label=_("C'est parfait  ▶")), False, False, 0)
+            suite=lambda: (ecrire_profil(), self.stack.set_visible_child_name("autonomie")),
+            suite_label=_("Continuer  ▶")), False, False, 0)
+        return v
+
+    # Écran — 2e axe : niveau d'autonomie
+    def _autonomie(self):
+        v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        t = Gtk.Label(label=_("Que voulez-vous gérer vous-même ?"))
+        t.get_style_context().add_class("titre")
+        v.pack_start(t, False, False, 0)
+        v.pack_start(Gtk.Label(label=_("(modifiable à tout moment)")), False, False, 0)
+
+        def niveau(txt, sous, lvl):
+            b = Gtk.Button()
+            inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            l1 = Gtk.Label(label=txt); l1.get_style_context().add_class("porte")
+            l2 = Gtk.Label(label=sous); l2.get_style_context().add_class("porte-sous")
+            l2.set_line_wrap(True); l2.set_justify(Gtk.Justification.CENTER)
+            inner.pack_start(l1, False, False, 0); inner.pack_start(l2, False, False, 0)
+            b.add(inner)
+            def go(*_a):
+                appliquer_autonomie(lvl); self.stack.set_visible_child_name("fini")
+            b.connect("clicked", go)
+            return b
+
+        v.pack_start(niveau(_("🛡️  Tranquille"),
+            _("L'essentiel, rien d'autre. On s'occupe du reste."), 1), False, False, 0)
+        v.pack_start(niveau(_("🧭  Curieux"),
+            _("L'essentiel + la logithèque pour installer vos applications."), 2), False, False, 0)
+        v.pack_start(niveau(_("🔧  Aux commandes"),
+            _("Tout est accessible, vous gérez votre ordinateur librement."), 3), False, False, 0)
+        v.pack_end(self._nav(retour="fin"), False, False, 0)
         return v
 
     def _ligne_pm(self, titre, plus, moins):
