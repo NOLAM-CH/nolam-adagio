@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Réparer mon affichage
+Name[fr]=Réparer mon affichage
+Comment=Rétablit votre affichage confortable si l'écran a été déréglé
+Exec=bash /opt/nolam-adagio/gui/adagio-reset.sh
+Icon=view-refresh
+Terminal=false
+Categories=Settings;Utility;Accessibility;
+Keywords=réparer;affichage;réinitialiser;confort;senior;adagio;

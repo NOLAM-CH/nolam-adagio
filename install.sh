@@ -59,9 +59,16 @@ case "${1:-}" in
   --list)       list_profiles; exit 0 ;;
 esac
 
-PROFILE_NAME="$1"
-PROFILE_FILE="$PROFILE_DIR/$PROFILE_NAME.conf"
-[[ -f "$PROFILE_FILE" ]] || die "Profil « $PROFILE_NAME » introuvable. Essayez : ./install.sh --list"
+# Accepte soit un nom de profil (profiles/NOM.conf), soit un chemin direct
+# vers un fichier .conf (ex. ~/.config/nolam-adagio/mon-profil.conf).
+if [[ -f "$1" ]]; then
+  PROFILE_FILE="$1"
+  PROFILE_NAME="$(basename "$1" .conf)"
+else
+  PROFILE_NAME="$1"
+  PROFILE_FILE="$PROFILE_DIR/$PROFILE_NAME.conf"
+fi
+[[ -f "$PROFILE_FILE" ]] || die "Profil « $1 » introuvable. Essayez : ./install.sh --list"
 
 if [[ "${XDG_CURRENT_DESKTOP:-}" != *Cinnamon* ]]; then
   warn "Bureau détecté : « ${XDG_CURRENT_DESKTOP:-inconnu} » (Adagio vise Cinnamon)."
