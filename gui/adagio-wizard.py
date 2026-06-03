@@ -15,14 +15,16 @@ import os
 import gettext
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gio, Gdk
+from gi.repository import Gtk, Gio, Gdk, GdkPixbuf
 
 # ── i18n (gettext) ───────────────────────────────────────────
 # Les chaînes du code sont en français (langue de base = msgid).
 # Une langue = un fichier locale/<lg>/LC_MESSAGES/nolam-adagio.mo
 # Le wizard suit la langue du système (LANG/LANGUAGE), override possible.
 APP = "nolam-adagio"
-LOCALE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locale")
+HERE = os.path.dirname(os.path.abspath(__file__))
+LOCALE_DIR = os.path.join(HERE, "locale")
+LOGO = os.path.join(HERE, "assets", "logo.png")
 try:
     gettext.bindtextdomain(APP, LOCALE_DIR)
     gettext.textdomain(APP)
@@ -82,7 +84,19 @@ def set_no_lock():
 
 THEME_CLAIR    = "Mint-Y"
 THEME_SOMBRE   = "Mint-Y-Dark"
-THEME_CONTRAST = "Mint-Y-Dark"
+THEME_CONTRAST = "HighContrast"   # nécessite gnome-themes-extra (sinon repli)
+
+def get_theme_name():
+    return CTHEME.get_string("name") if CTHEME else "Mint-Y"
+
+def current_ambiance():
+    n = get_theme_name()
+    if n == THEME_CONTRAST: return "contraste"
+    if "Dark" in n:         return "sombre"
+    return "clair"
+
+def get_click():
+    return NEMO.get_string("click-policy") if NEMO else "single"
 
 def profil_vois_mal():
     set_text_scale(1.7); set_cursor(48); set_theme(THEME_CONTRAST)
@@ -126,12 +140,16 @@ def ecrire_profil():
 # ── Interface ────────────────────────────────────────────────
 CSS = b"""
 * { font-size: 15pt; }
-.titre   { font-size: 28pt; font-weight: bold; }
+.titre   { font-size: 28pt; font-weight: bold; color: #1b4d3a; }
 .manifeste { font-size: 17pt; font-style: italic; }
-.porte   { font-size: 19pt; padding: 26px; margin: 8px; }
-.gros    { font-size: 22pt; font-weight: bold; padding: 10px 26px; }
-.echantillon { font-size: 16pt; padding: 14px; border: 2px solid #888; border-radius: 8px; }
+.porte   { font-size: 19pt; padding: 24px; }
+.porte-sous { font-size: 13pt; opacity: 0.7; }
+.gros    { font-size: 20pt; font-weight: bold; padding: 10px 26px; }
+.echantillon { font-size: 16pt; padding: 16px; border: 2px solid #b8c4bd; border-radius: 10px; background: #f4f7f5; }
+.reglage-titre { font-weight: bold; }
 button   { padding: 12px 20px; }
+button.porte:hover { background: #e8f0ec; }
+radiobutton:checked, button:checked { background: #1b4d3a; color: #ffffff; font-weight: bold; }
 """
 
 class Wizard(Gtk.Window):
@@ -172,16 +190,24 @@ class Wizard(Gtk.Window):
         return box
 
     def _accueil(self):
-        v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=22)
+        v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        contenu = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        if os.path.exists(LOGO):
+            try:
+                pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(LOGO, -1, 170, True)
+                contenu.pack_start(Gtk.Image.new_from_pixbuf(pix), False, False, 0)
+            except Exception:
+                pass
         t = Gtk.Label(label=_("Bienvenue 👋")); t.get_style_context().add_class("titre")
         m = Gtk.Label(label=_("« C'est à la machine de s'adapter à vous,\npas à vous de vous adapter à la machine. »"))
         m.get_style_context().add_class("manifeste"); m.set_justify(Gtk.Justification.CENTER)
         d = Gtk.Label(label=_("Nous allons régler votre écran ensemble,\nà votre confort. À chaque étape, vous voyez le résultat tout de suite."))
         d.set_justify(Gtk.Justification.CENTER)
+        contenu.pack_start(t, False, False, 0)
+        contenu.pack_start(m, False, False, 0)
+        contenu.pack_start(d, False, False, 0)
         v.pack_start(Gtk.Box(), True, True, 0)
-        v.pack_start(t, False, False, 0)
-        v.pack_start(m, False, False, 0)
-        v.pack_start(d, False, False, 0)
+        v.pack_start(contenu, False, False, 0)
         v.pack_start(Gtk.Box(), True, True, 0)
         v.pack_end(self._nav(suite=lambda: self.stack.set_visible_child_name("portes"),
                              suite_label=_("Commencer  ▶")), False, False, 0)
@@ -229,19 +255,37 @@ class Wizard(Gtk.Window):
             lambda: set_cursor(min(96, get_cursor()+8)),
             lambda: set_cursor(max(16, get_cursor()-8))), False, False, 0)
 
+        # Ambiance — boutons radio (le choix actif est mis en surbrillance)
         amb = Gtk.Box(spacing=10)
-        amb.pack_start(Gtk.Label(label=_("Ambiance :")), False, False, 0)
-        for lbl, name in ((_("☀ Clair"), THEME_CLAIR), (_("🌙 Sombre"), THEME_SOMBRE), (_("◐ Contraste"), THEME_CONTRAST)):
-            b = Gtk.Button(label=lbl)
-            b.connect("clicked", lambda _w, n=name: set_theme(n))
-            amb.pack_start(b, True, True, 0)
+        lab = Gtk.Label(label=_("Ambiance :")); lab.get_style_context().add_class("reglage-titre")
+        amb.pack_start(lab, False, False, 0)
+        cur_amb = current_ambiance()
+        amb_opts = ((_("☀ Clair"), THEME_CLAIR, "clair"),
+                    (_("🌙 Sombre"), THEME_SOMBRE, "sombre"),
+                    (_("◐ Contraste"), THEME_CONTRAST, "contraste"))
+        grp = None
+        for lbl, name, key in amb_opts:
+            rb = Gtk.RadioButton.new_with_label_from_widget(grp, lbl)
+            rb.set_mode(False)                 # apparence bouton (pas rond)
+            if grp is None: grp = rb
+            if key == cur_amb: rb.set_active(True)
+            rb.connect("toggled", lambda w, n=name: w.get_active() and set_theme(n))
+            amb.pack_start(rb, True, True, 0)
         v.pack_start(amb, False, False, 0)
 
+        # Pour ouvrir — boutons radio
         clic = Gtk.Box(spacing=10)
-        clic.pack_start(Gtk.Label(label=_("Pour ouvrir :")), False, False, 0)
-        b1 = Gtk.Button(label=_("Un seul clic")); b1.connect("clicked", lambda *_a: set_click("single"))
-        b2 = Gtk.Button(label=_("Double clic")); b2.connect("clicked", lambda *_a: set_click("double"))
-        clic.pack_start(b1, True, True, 0); clic.pack_start(b2, True, True, 0)
+        lab2 = Gtk.Label(label=_("Pour ouvrir :")); lab2.get_style_context().add_class("reglage-titre")
+        clic.pack_start(lab2, False, False, 0)
+        cur_clic = get_click()
+        grp2 = None
+        for lbl, pol in ((_("Un seul clic"), "single"), (_("Double clic"), "double")):
+            rb = Gtk.RadioButton.new_with_label_from_widget(grp2, lbl)
+            rb.set_mode(False)
+            if grp2 is None: grp2 = rb
+            if pol == cur_clic: rb.set_active(True)
+            rb.connect("toggled", lambda w, p=pol: w.get_active() and set_click(p))
+            clic.pack_start(rb, True, True, 0)
         v.pack_start(clic, False, False, 0)
 
         v.pack_end(self._nav(retour="portes",
