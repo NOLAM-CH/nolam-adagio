@@ -139,7 +139,7 @@ def ecrire_profil():
 
 # ── Interface ────────────────────────────────────────────────
 CSS = b"""
-/* Le wizard impose SON apparence (fond blanc, texte foncé) quel que soit
+/* Le wizard impose SON apparence (fond blanc, texte sombre) quel que soit
    le theme de la session : un outil d'accessibilite doit rester lisible. */
 window { background-color: #ffffff; }
 * { font-size: 15pt; color: #1b1b1b; }
