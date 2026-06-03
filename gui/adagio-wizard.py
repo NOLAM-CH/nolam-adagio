@@ -59,8 +59,17 @@ def get_text_scale():
     return IFACE.get_double("text-scaling-factor") if IFACE else 1.0
 
 def set_cursor(v):
+    v = int(v)
     for s in (IFACE, GIFACE):
-        if s: s.set_int("cursor-size", int(v))
+        if s: s.set_int("cursor-size", v)
+    # Sous X11/Cinnamon, changer cursor-size ne rafraîchit pas le pointeur
+    # déjà affiché. On force le rechargement en ré-appliquant le thème de
+    # curseur (un set de même valeur n'émet pas de signal → bascule brève).
+    if IFACE:
+        theme = IFACE.get_string("cursor-theme") or "Adwaita"
+        alt = "Adwaita" if theme != "Adwaita" else "Bibata-Modern-Classic"
+        IFACE.set_string("cursor-theme", alt)
+        IFACE.set_string("cursor-theme", theme)
 
 def get_cursor():
     return IFACE.get_int("cursor-size") if IFACE else 24
