@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Adapter mon écran
+Name[fr]=Adapter mon écran
+Comment=Régler le confort d'affichage (texte, couleurs, curseur)
+Exec=python3 /opt/nolam-adagio/gui/adagio-wizard.py
+Icon=preferences-desktop-accessibility
+Terminal=false
+Categories=Settings;Utility;Accessibility;
+Keywords=accessibilité;confort;texte;vue;senior;adagio;
