@@ -1,3 +1,6 @@
 .DS_Store
 *.pxd
 *.mo
+
+# Bruts AI (sources de travail) — gardés en local / bundle NAS, hors repo public
+originaux grok/
