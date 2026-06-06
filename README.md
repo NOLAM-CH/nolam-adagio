@@ -13,6 +13,8 @@ NOLAM Adagio adapte l'interface de **Linux Mint Cinnamon** à la personne qui s'
 
 Pensé pour les **seniors** et les personnes en situation de **handicap visuel**, à installer par un proche ou un informaticien.
 
+![Le bureau d'un poste NOLAM Adagio en profil senior : texte agrandi, curseur bien visible, menu clair avec l'entrée « Adapter mon écran », fond d'écran alpin](docs/screenshots/bureau-senior.png)
+
 ---
 
 ## Pourquoi
@@ -33,6 +35,8 @@ Pas une distribution à maintenir. Pas une usine à gaz. Une **couche douce** pa
 ## L'assistant « Adapter mon écran »
 
 Pas besoin de connaître les profils : Adagio inclut un **assistant graphique** qui règle l'affichage en posant des questions simples — *« lisez-vous bien ce texte ? »*, `A−` / `A+`, vignettes Clair / Sombre / Contraste — avec un **aperçu en direct**. Il est conçu pour être utilisable **avant** tout réglage : il démarre déjà grand et contrasté.
+
+![Écran d'accueil de l'assistant « Adapter mon écran » de NOLAM Adagio](docs/screenshots/assistant-bienvenue.png)
 
 Deux dimensions :
 
