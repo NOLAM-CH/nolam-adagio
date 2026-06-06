@@ -2,6 +2,11 @@
 
 > *Lentement, et avec aise.*
 
+![Licence GPL-3.0](https://img.shields.io/badge/licence-GPL--3.0-2bb3b3)
+![Plateforme](https://img.shields.io/badge/Linux%20Mint-Cinnamon-0d4a50)
+![Sans sudo](https://img.shields.io/badge/sans-sudo-success)
+![Made in Switzerland](https://img.shields.io/badge/Made%20in-Switzerland%20%F0%9F%87%A8%F0%9F%87%AD-c39a3f)
+
 **Et si l'ordinateur leur ressemblait enfin ?**
 
 NOLAM Adagio adapte l'interface de **Linux Mint Cinnamon** à la personne qui s'en sert — sa vue, ses gestes, ses habitudes — au lieu de lui demander de s'adapter à la machine. Un seul script, des profils prêts à l'emploi, et **tout est réversible**.
@@ -25,10 +30,21 @@ Pas une distribution à maintenir. Pas une usine à gaz. Une **couche douce** pa
 
 *À venir : `motricite` (cibles larges, anti-tremblement), `cognitif` (interface épurée et verrouillée), `non-voyant` (lecteur d'écran Orca — en V2, avec un testeur réellement concerné).*
 
+## L'assistant « Adapter mon écran »
+
+Pas besoin de connaître les profils : Adagio inclut un **assistant graphique** qui règle l'affichage en posant des questions simples — *« lisez-vous bien ce texte ? »*, `A−` / `A+`, vignettes Clair / Sombre / Contraste — avec un **aperçu en direct**. Il est conçu pour être utilisable **avant** tout réglage : il démarre déjà grand et contrasté.
+
+Deux dimensions :
+
+1. **Confort visuel** — trois portes (« je vois mal », « gestes difficiles », « je débute ») mènent à un profil, puis on affine en direct.
+2. **Niveau d'autonomie** — *Tranquille* / *Curieux* / *Aux commandes* : décide de ce qu'on montre ou masque (outils techniques, logithèque), parce que respecter l'autonomie fait aussi partie de l'accessibilité.
+
+Tout ce que l'assistant règle est écrit dans un **profil réutilisable et exportable** (même format que `profiles/*.conf`). Relançable à tout moment via le lanceur **« Adapter mon écran »**. Interface **bilingue FR / DE**.
+
 ## Utilisation
 
 ```bash
-git clone https://github.com/<votre-compte>/nolam-adagio.git
+git clone https://github.com/dpanbug/nolam-adagio.git
 cd nolam-adagio
 
 ./install.sh --list          # voir les profils
@@ -64,3 +80,4 @@ Avant d'appliquer quoi que ce soit, `install.sh` sauvegarde l'état complet de v
 ---
 
 *Un projet [NOLAM](https://nolam.ch) — des outils numériques qui rendent l'autonomie, pas qui la confisquent.*
+*Présentation : [nolam.ch/adagio](https://nolam.ch/adagio/) · Contribuer : [CONTRIBUTING.md](CONTRIBUTING.md)*
