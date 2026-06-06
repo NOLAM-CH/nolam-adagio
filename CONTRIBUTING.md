@@ -1,5 +1,7 @@
 # Contribuer à NOLAM Adagio
 
+**Français** · [English](CONTRIBUTING.en.md)
+
 Merci de l'intérêt ! Adagio vit de l'idée que **chacun devrait pouvoir adapter son ordinateur à lui** — toute aide qui sert cette cause est bienvenue.
 
 ## La façon la plus simple : un nouveau profil
