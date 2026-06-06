@@ -125,7 +125,9 @@ APPS_TECHNIQUES = [
     "gparted.desktop", "timeshift-gtk.desktop",
     "mintdrivers.desktop", "mintsources.desktop",
     "software-properties-gtk.desktop", "nm-connection-editor.desktop",
-    "org.gnome.Tweaks.desktop", "byobu.desktop", "yelp.desktop",
+    "org.gnome.Tweaks.desktop", "byobu.desktop",
+    # NB : yelp (l'Aide) volontairement GARDÉ visible à tous les niveaux — une
+    # senior doit toujours pouvoir accéder à l'aide, même en N1 Tranquille.
 ]
 APPS_LOGITHEQUE = ["mintinstall.desktop"]   # le « Store » / Gestionnaire de logiciels
 
