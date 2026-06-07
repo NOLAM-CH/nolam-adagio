@@ -52,13 +52,14 @@ step "Icônes menu NOLAM"
 install -d /usr/share/icons/nolam
 cp "$REPO/Logo/start_dk.png" /usr/share/icons/nolam/nolam-menu-light.png || die "start_dk.png manquant dans le repo"
 cp "$REPO/Logo/start_c.png"  /usr/share/icons/nolam/nolam-menu-dark.png  || warn "start_c.png manquant (variante sombre)"
-THEME="$(as_client gsettings get org.cinnamon.desktop.interface gtk-theme 2>/dev/null || echo '')"
-case "$THEME" in
-  *Dark*|*dark*) cp /usr/share/icons/nolam/nolam-menu-dark.png  /usr/share/icons/nolam/nolam-menu.png 2>/dev/null ;;
-  *)             cp /usr/share/icons/nolam/nolam-menu-light.png /usr/share/icons/nolam/nolam-menu.png ;;
-esac
+# Icône active = variante PANNEAU CLAIR par défaut : un déploiement senior force un
+# panneau clair Mint-Y (cf. profil senior), donc la tuile sombre ressort dessus.
+# La variante sombre (nolam-menu-dark.png) reste posée : le wizard la basculera si
+# l'utilisateur choisit le thème sombre. (Évite le mismatch « tuile sombre / panneau
+# sombre par défaut de Mint » observé quand le profil senior n'est pas encore appliqué.)
+cp /usr/share/icons/nolam/nolam-menu-light.png /usr/share/icons/nolam/nolam-menu.png
 chmod 644 /usr/share/icons/nolam/*.png
-ok "icônes posées (active selon thème : ${THEME:-inconnu}). NB: relancer le script si on change de thème."
+ok "icônes posées (active = variante panneau clair ; variante sombre dispo pour le wizard)"
 
 # ═══════════ 2. WALLPAPER + SÉLECTEUR ═══════════
 step "Wallpaper + sélecteur Cinnamon"
