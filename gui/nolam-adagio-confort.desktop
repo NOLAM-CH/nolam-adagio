@@ -2,9 +2,16 @@
 Type=Application
 Name=Adapter mon écran
 Name[fr]=Adapter mon écran
+Name[de]=Meinen Bildschirm anpassen
+Name[en]=Adapt my screen
 Comment=Régler le confort d'affichage (texte, couleurs, curseur)
+Comment[fr]=Régler le confort d'affichage (texte, couleurs, curseur)
+Comment[de]=Anzeigekomfort einstellen (Text, Farben, Cursor)
+Comment[en]=Adjust display comfort (text, colours, cursor)
 Exec=python3 /opt/nolam-adagio/gui/adagio-wizard.py
 Icon=/opt/nolam-adagio/gui/assets/logo.png
 Terminal=false
 Categories=Settings;Utility;Accessibility;
 Keywords=accessibilité;confort;texte;vue;senior;adagio;
+Keywords[de]=Barrierefreiheit;Komfort;Text;Sicht;Senioren;adagio;
+Keywords[en]=accessibility;comfort;text;vision;senior;adagio;

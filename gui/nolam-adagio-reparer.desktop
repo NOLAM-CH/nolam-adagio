@@ -2,9 +2,16 @@
 Type=Application
 Name=Réparer mon affichage
 Name[fr]=Réparer mon affichage
+Name[de]=Meine Anzeige reparieren
+Name[en]=Repair my display
 Comment=Rétablit votre affichage confortable si l'écran a été déréglé
+Comment[fr]=Rétablit votre affichage confortable si l'écran a été déréglé
+Comment[de]=Stellt eine komfortable Anzeige wieder her, falls der Bildschirm verstellt wurde
+Comment[en]=Restores a comfortable display if the screen was changed
 Exec=bash /opt/nolam-adagio/gui/adagio-reset.sh
 Icon=view-refresh
 Terminal=false
 Categories=Settings;Utility;Accessibility;
 Keywords=réparer;affichage;réinitialiser;confort;senior;adagio;
+Keywords[de]=reparieren;Anzeige;zurücksetzen;Komfort;Senioren;adagio;
+Keywords[en]=repair;display;reset;comfort;senior;adagio;
