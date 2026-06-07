@@ -3,8 +3,11 @@
 #  NOLAM Adagio / SimpleBox — branding & finitions d'un poste
 #  Linux Mint Cinnamon. Idempotent (relançable sans casse).
 #
-#  Usage :  sudo ./simplebox-branding.sh <compte_client>
-#           (ex: sudo ./simplebox-branding.sh client)
+#  Usage :  sudo ./simplebox-branding.sh <compte_client> [--secure]
+#           (ex: sudo ./simplebox-branding.sh client --secure)
+#           --secure : pose aussi pare-feu UFW + SSH par clé uniquement
+#                      (SSH n'est durci QUE si une clé autorisée existe déjà,
+#                       sinon sauté pour éviter le verrouillage).
 #
 #  Lit les assets depuis le repo (par défaut /opt/nolam-adagio).
 #  Pose : icône menu (clair/sombre selon thème), splash Plymouth,
@@ -20,8 +23,17 @@
 set -uo pipefail
 
 REPO="${NOLAM_REPO:-/opt/nolam-adagio}"
-CLIENT="${1:-}"
+CLIENT=""
+SECURE=0       # --secure : pose aussi le pare-feu UFW + SSH par clé uniquement
 WARN=0
+NPOS=0
+for a in "$@"; do
+  case "$a" in
+    --secure) SECURE=1 ;;
+    --*)      printf 'option inconnue ignorée : %s\n' "$a" >&2 ;;
+    *)        CLIENT="$a"; NPOS=$((NPOS+1)) ;;
+  esac
+done
 
 ok()   { printf '\e[32m✓\e[0m %s\n' "$*"; }
 warn() { WARN=$((WARN+1)); printf '\e[33m!\e[0m %s\n' "$*" >&2; }
@@ -31,7 +43,8 @@ step() { printf '\n\e[1m== %s ==\e[0m\n' "$*"; }
 backup_once() { [ -f "$1" ] && [ ! -f "$1.nolam.bak" ] && cp -p "$1" "$1.nolam.bak" && ok "sauvegarde : $1 → $1.nolam.bak"; return 0; }
 
 [ "$(id -u)" -eq 0 ]          || die "À lancer en root : sudo $0 <compte_client>"
-[ -n "$CLIENT" ]              || die "Usage : sudo $0 <compte_client>  (ex: client, brigitte)"
+[ -n "$CLIENT" ]              || die "Usage : sudo $0 <compte_client> [--secure]  (ex: client, brigitte)"
+[ "$NPOS" -le 1 ]            || die "Trop d'arguments : un seul compte client attendu (reçu $NPOS)."
 id "$CLIENT" >/dev/null 2>&1  || die "Compte « $CLIENT » introuvable."
 [ -d "$REPO" ]               || die "Repo introuvable : $REPO"
 
@@ -221,6 +234,47 @@ if command -v mintupdate-automation >/dev/null 2>&1; then
   mintupdate-automation upgrade enable    >/dev/null 2>&1 && ok "upgrade auto activé"
   mintupdate-automation autoremove enable >/dev/null 2>&1 && ok "autoremove auto activé"
 else warn "mintupdate-automation indispo — skip"; fi
+
+# ═══════════ 7. SÉCURITÉ (option --secure) ═══════════
+if [ "$SECURE" = 1 ]; then
+  step "Sécurité (UFW + SSH clé uniquement)"
+  # UFW : autoriser SSH AVANT d'activer (sinon = verrouillage hors de la machine)
+  if command -v ufw >/dev/null 2>&1; then
+    SSHPORT="$( (sshd -T 2>/dev/null | awk '/^port /{print $2; exit}') )"; SSHPORT="${SSHPORT:-22}"
+    ufw allow "$SSHPORT"/tcp >/dev/null 2>&1
+    ufw allow OpenSSH      >/dev/null 2>&1
+    if ufw --force enable >/dev/null 2>&1; then ok "UFW actif (entrant refusé sauf SSH port $SSHPORT)"; else warn "UFW : activation échouée"; fi
+  else warn "ufw absent — pare-feu non posé"; fi
+  # SSH par clé uniquement — garde-fous anti-verrouillage
+  # Une clé valide = ligne non commentée contenant un type de clé (options en préfixe OK).
+  _has_key() { [ -f "$1" ] && grep -vE '^[[:space:]]*#' "$1" 2>/dev/null | grep -qE '(^|[, ])(ssh-(rsa|ed25519)|ecdsa-sha2-nistp[0-9]+|sk-ssh-ed25519|sk-ecdsa)'; }
+  NONROOT_KEY=0; ANY_KEY=0
+  for f in /home/*/.ssh/authorized_keys; do _has_key "$f" && { NONROOT_KEY=1; ANY_KEY=1; break; }; done
+  _has_key /root/.ssh/authorized_keys && ANY_KEY=1
+  if [ "$ANY_KEY" = 1 ]; then
+    # Si la SEULE clé est celle de root, garder root-par-clé (sinon plus aucun accès SSH).
+    if [ "$NONROOT_KEY" = 1 ]; then ROOTLOGIN="no"; else ROOTLOGIN="prohibit-password"; fi
+    grep -qE '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' /etc/ssh/sshd_config 2>/dev/null \
+      || warn "sshd_config n'inclut pas sshd_config.d/*.conf → durcissement potentiellement SANS EFFET (à vérifier à la main)."
+    H=/etc/ssh/sshd_config.d/99-nolam-hardening.conf
+    backup_once "$H"
+    printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin %s\n' "$ROOTLOGIN" > "$H"
+    if sshd -t 2>/dev/null; then
+      if systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null; then
+        # Vérifier l'état RÉEL plutôt que supposer (drop-in bien pris en compte ?)
+        if sshd -T 2>/dev/null | grep -qi '^passwordauthentication no'; then
+          ok "SSH durci : connexion par CLÉ uniquement (vérifié ; PermitRootLogin=$ROOTLOGIN)"
+        else
+          warn "Conf posée mais SSH montre encore le mot de passe ACTIF (Include manquant ?) → à corriger à la main."
+        fi
+      else warn "SSH : redémarrage du service échoué (conf posée, à recharger)"; fi
+    else
+      rm -f "$H"; warn "sshd -t a refusé la conf → durcissement ANNULÉ (SSH laissé intact)"
+    fi
+  else
+    warn "Durcissement SSH SAUTÉ : aucune clé SSH autorisée trouvée. Ajoute ta clé publique (authorized_keys) PUIS relance avec --secure, sinon tu te verrouilles dehors."
+  fi
+fi
 
 # ═══════════ BILAN ═══════════
 step "TERMINÉ"
