@@ -25,6 +25,7 @@ T_LOW=40        # °C : à cette temp et en dessous → vitesse mini
 T_HIGH=60       # °C : à cette temp et au-dessus → vitesse maxi
 INTERVAL=10     # secondes entre deux mesures
 STEP_MIN=100    # tr/min : on n'écrit pas pour un écart plus petit
+HYST=3          # °C : il faut refroidir de 3 °C avant de ralentir
 STATE=/run/nolam-imac-fans.state   # dernière mesure, lisible par tous
 
 log() { echo "nolam-imac-fans: $*"; }
@@ -87,24 +88,34 @@ trap 'release' EXIT
 RPM_MIN=$(cat "${FAN}_min")
 RPM_MAX=$(cat "${FAN}_max")
 LAST=0
+T_EFF=-1        # température « retenue » pour la courbe (hystérésis)
+
+log "démarrage : courbe ${T_LOW}-${T_HIGH} °C → ${RPM_MIN}-${RPM_MAX} tr/min, hystérésis ${HYST} °C"
 
 while true; do
     T=$(ssd_temp) || { log "température SSD illisible"; exit 1; }
 
-    if [ "$T" -le "$T_LOW" ]; then
+    # Hystérésis : on monte tout de suite, on ne redescend que si le SSD
+    # a refroidi d'au moins HYST °C (évite le ventilo qui « pompe »).
+    if [ "$T" -gt "$T_EFF" ] || [ "$T" -le $(( T_EFF - HYST )) ]; then
+        T_EFF=$T
+    fi
+
+    if [ "$T_EFF" -le "$T_LOW" ]; then
         RPM=$RPM_MIN
-    elif [ "$T" -ge "$T_HIGH" ]; then
+    elif [ "$T_EFF" -ge "$T_HIGH" ]; then
         RPM=$RPM_MAX
     else
-        RPM=$(( RPM_MIN + (RPM_MAX - RPM_MIN) * (T - T_LOW) / (T_HIGH - T_LOW) ))
+        RPM=$(( RPM_MIN + (RPM_MAX - RPM_MIN) * (T_EFF - T_LOW) / (T_HIGH - T_LOW) ))
     fi
 
     DIFF=$(( RPM - LAST )); [ "$DIFF" -lt 0 ] && DIFF=$(( -DIFF ))
     if [ "$(cat "${FAN}_manual")" != "1" ] || [ "$DIFF" -ge "$STEP_MIN" ]; then
         echo 1 > "${FAN}_manual" && echo "$RPM" > "${FAN}_output" || { log "écriture SMC refusée"; exit 1; }
+        log "SSD ${T} °C (retenu ${T_EFF} °C) → consigne ${LAST} → ${RPM} tr/min"
         LAST=$RPM
     fi
     # État lisible sans sudo (supervision, --status)
-    echo "$(date +%FT%T) ssd=${T}C fan=$(basename "$FAN") consigne=${RPM}rpm" > "$STATE" 2>/dev/null
+    echo "$(date +%FT%T) ssd=${T}C retenu=${T_EFF}C fan=$(basename "$FAN") consigne=${RPM}rpm" > "$STATE" 2>/dev/null
     sleep "$INTERVAL"
 done
