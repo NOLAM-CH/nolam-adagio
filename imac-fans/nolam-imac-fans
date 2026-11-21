@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────
+#  NOLAM Adagio — ventilo « HDD » des vieux iMac piloté par la
+#  température réelle du SSD.
+#
+#  Pourquoi : quand on remplace le disque d'origine par un SSD, le SMC
+#  perd la sonde du disque et met le ventilo HDD presque à fond (hélico).
+#  Ce démon lit la température du SSD (drivetemp, sinon smartctl) et règle
+#  le ventilo HDD sur une courbe douce. Les ventilos CPU et ODD restent
+#  gérés par le SMC (on ne touche pas à ce qui protège CPU/GPU).
+#
+#  Garde-fou : en cas d'arrêt, d'erreur ou de lecture impossible, on
+#  rend la main au SMC (manual=0). Pire cas = ça souffle, jamais ça cuit.
+#
+#  Usage :  nolam-imac-fans            boucle (lancé par systemd)
+#           nolam-imac-fans --release  rend la main au SMC et sort
+#           nolam-imac-fans --status   affiche l'état et sort
+#
+#  Copyright (C) 2026 dpan-Bug / NOLAM — SPDX: GPL-3.0-or-later
+# ─────────────────────────────────────────────────────────────
+set -u
+
+SMC=/sys/devices/platform/applesmc.768
+T_LOW=40        # °C : à cette temp et en dessous → vitesse mini
+T_HIGH=60       # °C : à cette temp et au-dessus → vitesse maxi
+INTERVAL=10     # secondes entre deux mesures
+STEP_MIN=100    # tr/min : on n'écrit pas pour un écart plus petit
+STATE=/run/nolam-imac-fans.state   # dernière mesure, lisible par tous
+
+log() { echo "nolam-imac-fans: $*"; }
+
+# Trouve le ventilo dont l'étiquette est « HDD » (ex. fan2).
+find_fan() {
+    local f
+    for f in "$SMC"/fan*_label; do
+        [ -f "$f" ] || continue
+        if [ "$(tr -d ' \n' < "$f")" = "HDD" ]; then
+            echo "${f%_label}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Disque qui porte la racine (ex. /dev/sda).
+ROOT_DISK="/dev/$(lsblk -no PKNAME "$(findmnt -no SOURCE /)" 2>/dev/null | head -1)"
+
+# Température du SSD en °C, sur la sortie standard.
+# 1) drivetemp (noyau) si le disque le supporte ;
+# 2) sinon smartctl (attribut SMART 194 ou 190), ex. Kingston A400.
+ssd_temp() {
+    local h raw
+    for h in /sys/class/hwmon/hwmon*; do
+        [ -f "$h/name" ] || continue
+        if [ "$(cat "$h/name")" = "drivetemp" ] && raw=$(cat "$h/temp1_input" 2>/dev/null); then
+            echo $(( raw / 1000 ))
+            return 0
+        fi
+    done
+    command -v smartctl >/dev/null || return 1
+    [ -b "$ROOT_DISK" ] || return 1
+    raw=$(smartctl -A "$ROOT_DISK" 2>/dev/null \
+          | awk '$1==194 || $1==190 {print $10; exit}')
+    [[ "$raw" =~ ^[0-9]+$ ]] || return 1
+    echo "$raw"
+}
+
+release() {
+    [ -n "${FAN:-}" ] && [ -f "${FAN}_manual" ] && echo 0 > "${FAN}_manual" 2>/dev/null
+    log "main rendue au SMC"
+}
+
+FAN=$(find_fan) || { log "pas de ventilo HDD (pas un iMac applesmc ?) — rien à faire"; exit 0; }
+
+case "${1:-}" in
+    --release) release; exit 0 ;;
+    --status)
+        T=$(ssd_temp) && echo "SSD ($ROOT_DISK): $T °C" || echo "SSD ($ROOT_DISK): lecture directe impossible (sudo requis pour smartctl)"
+        [ -f "$STATE" ] && echo "Dernière mesure du service : $(cat "$STATE")"
+        echo "$(basename "$FAN") HDD: $(cat "${FAN}_input") tr/min (min $(cat "${FAN}_min"), max $(cat "${FAN}_max"), manual=$(cat "${FAN}_manual"))"
+        exit 0 ;;
+esac
+
+trap 'exit 0' TERM INT
+trap 'release' EXIT
+
+RPM_MIN=$(cat "${FAN}_min")
+RPM_MAX=$(cat "${FAN}_max")
+LAST=0
+
+while true; do
+    T=$(ssd_temp) || { log "température SSD illisible"; exit 1; }
+
+    if [ "$T" -le "$T_LOW" ]; then
+        RPM=$RPM_MIN
+    elif [ "$T" -ge "$T_HIGH" ]; then
+        RPM=$RPM_MAX
+    else
+        RPM=$(( RPM_MIN + (RPM_MAX - RPM_MIN) * (T - T_LOW) / (T_HIGH - T_LOW) ))
+    fi
+
+    DIFF=$(( RPM - LAST )); [ "$DIFF" -lt 0 ] && DIFF=$(( -DIFF ))
+    if [ "$(cat "${FAN}_manual")" != "1" ] || [ "$DIFF" -ge "$STEP_MIN" ]; then
+        echo 1 > "${FAN}_manual" && echo "$RPM" > "${FAN}_output" || { log "écriture SMC refusée"; exit 1; }
+        LAST=$RPM
+    fi
+    # État lisible sans sudo (supervision, --status)
+    echo "$(date +%FT%T) ssd=${T}C fan=$(basename "$FAN") consigne=${RPM}rpm" > "$STATE" 2>/dev/null
+    sleep "$INTERVAL"
+done

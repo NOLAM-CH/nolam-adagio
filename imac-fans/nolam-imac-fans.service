@@ -1,0 +1,14 @@
+[Unit]
+Description=NOLAM Adagio - ventilo HDD des vieux iMac pilote par la temperature du SSD
+After=systemd-modules-load.service
+ConditionPathExists=/sys/devices/platform/applesmc.768
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/nolam-imac-fans
+ExecStopPost=/usr/local/sbin/nolam-imac-fans --release
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
